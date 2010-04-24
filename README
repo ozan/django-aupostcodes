@@ -1,0 +1,61 @@
+Django field and helpers for validating an Australian post code, and
+retrieving the locality and State of a given post code.
+
+Uses Australia Post published post code data to check the validity of an
+entered post code.
+
+
+INSTALLATION: 
+~~~~~~~~~~~~~
+
+Firstly, add 'aupostcodes' to your INSTALLED_APPS in settings.py. This is
+because two tables are used to store the data against which postcodes are
+validated.
+
+Next, run ./manage.py syncdb to create the required tables.
+
+Finally, run:
+
+    ./manage.py loaddata <PATH_TO_APP>/aupostcodes/fixtures/postcodes.json
+
+I've avoided using initial_data.json, as there's no need to reload the
+fixture every time syncdb is done.
+
+
+USAGE: 
+~~~~~~
+
+The simplest usage is through aupostcodes.fields.AUPostCodeField as so:
+
+    from django.db import models 
+    from aupostcodes.fields import AUPostCodeField
+    
+    class UserProfile(models.Model):
+        ...
+        postcode = AUPostCodeField()
+
+Or, to use the form field directly:
+
+    from django import forms
+    from aupostcodes.fields import AUPostCodeFormField
+    
+    class RegistrationForm(forms.Form):
+        ...
+        postcode = AUPostCodeFormField()
+
+Both will ensure appropriate validation. If you see that ostensibly valid
+post codes are being invalidated, you probably haven't loaded the post codes
+fixture correctly (see `installation`).
+
+At this stage, the python type of the value returned by an AUPostCodeField is
+unicode, not AUPostCode. For this reason, if you wish to use the post code to
+determine locality or state, you will need to fetch it from the db yourself,
+for instance:
+
+    postcode = AUPostCode.objects.get(postcode=form.cleaned_data['postcode'])
+    states = postcode.states
+    if len(states) == 1 and states[0] == 'NSW':
+        print "Howdy neighbour"
+
+I'll probably fix this at some stage.
+
